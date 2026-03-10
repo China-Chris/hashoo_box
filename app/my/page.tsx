@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ConnectWalletButton from "../components/ConnectWalletButton";
+import MyPageGate from "../components/MyPageGate";
 import MySection from "../components/MySection";
 import Footer from "../components/Footer";
 
@@ -45,7 +46,9 @@ export default function MyPage() {
           </div>
         </section>
 
-        <MySection />
+        <MyPageGate>
+          <MySection />
+        </MyPageGate>
       </main>
 
       <Footer />

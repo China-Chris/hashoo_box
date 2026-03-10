@@ -14,9 +14,11 @@ import { defineChain } from "viem/chains/utils";
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID";
 
+export const HASHKEY_CHAIN_ID = 177;
+
 // HashKey Chain（主网）
 const hashkeyChain = defineChain({
-  id: 177,
+  id: HASHKEY_CHAIN_ID,
   name: "HashKey Chain",
   nativeCurrency: { name: "HSK", symbol: "HSK", decimals: 18 },
   rpcUrls: {

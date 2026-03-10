@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRequireHashKeyWallet } from "../hooks/useRequireHashKeyWallet";
 
 type RevealItem = { amount: number };
 
@@ -38,6 +39,7 @@ export default function BlindBoxCard({
   const [remaining, setRemaining] = useState(initialRemaining);
   const isOpen = isOpenProp !== undefined ? isOpenProp : internalOpen;
   const disabled = sold || isOpen;
+  const { requireWallet } = useRequireHashKeyWallet();
 
   const handleOpen = () => {
     if (disabled) return;
@@ -129,11 +131,14 @@ export default function BlindBoxCard({
           </div>
           <button
             onClick={() => {
-              if (onOpenClick && !disabled) {
-                onOpenClick();
-                return;
-              }
-              handleOpen();
+              if (disabled) return;
+              requireWallet(() => {
+                if (onOpenClick) {
+                  onOpenClick();
+                  return;
+                }
+                handleOpen();
+              });
             }}
             disabled={disabled}
             className={`px-4 py-2 rounded-3xl text-sm font-medium transition-all duration-200 font-nav ${
