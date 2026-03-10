@@ -1,75 +1,97 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
-type RevealItem = {
-  name: string;
-  rarity: string;
-  color: string;
-};
+type RevealItem = { amount: number };
 
-const PLACEHOLDER_ITEMS: RevealItem[] = [
-  { name: "星云龙", rarity: "SSR", color: "from-amber-400 to-orange-500" },
-  { name: "幻影猫", rarity: "SR", color: "from-violet-400 to-purple-500" },
-  { name: "霓虹虎", rarity: "R", color: "from-cyan-400 to-blue-500" },
-  { name: "暗夜蝠", rarity: "N", color: "from-slate-400 to-slate-600" },
-];
+const PLACEHOLDER_ITEMS: RevealItem[] = Array.from({ length: 10 }, (_, i) => ({ amount: i + 1 }));
 
 export default function BlindBoxCard({
   title,
   id,
   remaining: initialRemaining = 0,
   mobileTitle,
+  isOpen: isOpenProp,
+  onOpen: onOpenCallback,
+  sold = false,
+  unopenedCount,
+  totalCount = 20,
 }: {
   title: string;
   id: number;
   remaining?: number;
   mobileTitle?: string;
+  isOpen?: boolean;
+  onOpen?: () => void;
+  sold?: boolean;
+  /** 未开启数量（与 web Unopened 一致，后续从同一后端接口取） */
+  unopenedCount?: number;
+  /** 总盲盒数，与 unopenedCount 配套，后续从同一后端取 */
+  totalCount?: number;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [revealedItem, setRevealedItem] = useState<RevealItem | null>(null);
   const [remaining, setRemaining] = useState(initialRemaining);
+  const isOpen = isOpenProp !== undefined ? isOpenProp : internalOpen;
+  const disabled = sold || isOpen;
 
   const handleOpen = () => {
-    if (isOpen) return;
+    if (disabled) return;
     const item = PLACEHOLDER_ITEMS[id % PLACEHOLDER_ITEMS.length];
     setRevealedItem(item);
     setRemaining((n) => Math.max(0, n - 1));
-    setIsOpen(true);
+    onOpenCallback?.();
+    if (isOpenProp === undefined) setInternalOpen(true);
   };
 
   return (
     <div className="group relative rounded-[28px] overflow-hidden bg-[#0a0a0a] border-2 border-violet-500/60 shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-300 hover:border-violet-400 hover:shadow-[0_0_32px_rgba(139,92,246,0.35)]">
       <div className="aspect-[4/3] relative flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-6 bg-gradient-to-b from-[#111111] to-[#000000]">
+        {sold && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 rounded-[28px]">
+            <Image
+              src="/sold.png"
+              alt="Sold"
+              width={120}
+              height={120}
+              className="object-contain w-24 h-24 sm:w-28 sm:h-28"
+            />
+          </div>
+        )}
         {!isOpen ? (
           <div className="flex flex-col items-center gap-6 sm:gap-8">
             {/* 盲盒 3D 感盒子 */}
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 shrink-0" style={{ perspective: "1000px" }}>
+            <div className="relative w-44 h-44 sm:w-40 sm:h-40 shrink-0" style={{ perspective: "1000px" }}>
               <div
-                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-600/40 via-purple-600/30 to-fuchsia-600/40 border border-white/10 shadow-inner animate-float overflow-hidden"
+                className="absolute inset-0 rounded-2xl border border-white/10 shadow-inner animate-float overflow-hidden bg-[#0f0f14]"
                 style={{ transform: "rotateX(15deg) rotateY(-10deg)", transformStyle: "preserve-3d" }}
               >
-                <div className="absolute inset-0 rounded-2xl animate-box-shine relative" />
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-white/20 to-transparent opacity-30 pointer-events-none" />
+                <Image
+                  src="/box-cover.png"
+                  alt="Mystery Box"
+                  width={160}
+                  height={160}
+                  className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                />
               </div>
             </div>
           </div>
         ) : (
           <div className="w-full min-h-full flex flex-col items-center justify-start pt-12 gap-3 text-center md:justify-center md:pt-0">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center overflow-hidden shadow-lg bg-transparent">
+              <Image
+                src="/revealed-token.png"
+                alt="Revealed"
+                width={80}
+                height={80}
+                className="object-contain w-full h-full"
+              />
+            </div>
             {revealedItem && (
-              <>
-                <div
-                  className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${revealedItem.color} flex items-center justify-center text-2xl font-bold text-white shadow-lg font-nav`}
-                >
-                  ?
-                </div>
-                <p className="text-lg font-semibold text-white font-nav">
-                  {revealedItem.name}
-                </p>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-violet-300">
-                  {revealedItem.rarity}
-                </span>
-              </>
+              <p className="text-lg font-semibold text-white font-nav">
+                {revealedItem.amount} HSK
+              </p>
             )}
           </div>
         )}
@@ -88,19 +110,19 @@ export default function BlindBoxCard({
               )}
             </h3>
             <span className="md:hidden text-xs text-white font-nav">
-              剩余 {remaining} 个
+              {unopenedCount !== undefined ? `${unopenedCount}/${totalCount}` : `${remaining}/${totalCount}`}
             </span>
           </div>
           <button
             onClick={handleOpen}
-            disabled={isOpen}
+            disabled={disabled}
             className={`px-4 py-2 rounded-3xl text-sm font-medium transition-all duration-200 font-nav ${
-              isOpen
-                ? "bg-white/10 text-[#71717a] cursor-default"
+              disabled
+                ? "bg-white/10 text-[#71717a] cursor-not-allowed"
                 : "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)]"
             }`}
           >
-            {isOpen ? "Opened" : "Open"}
+            {isOpen ? "Opened" : sold ? "Sold" : "Open"}
           </button>
         </div>
       </div>

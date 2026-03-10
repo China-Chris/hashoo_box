@@ -4,7 +4,7 @@ import Footer from "./components/Footer";
 
 const BOXES = Array.from({ length: 20 }, (_, i) => ({
   id: i,
-  title: "Hashoo系列",
+  title: `Hashoo#${i + 1}`,
   remaining: 99 - i,
 }));
 
@@ -33,10 +33,10 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {/* 电脑端：Mystery Box、My 在 Connect Wallet 左侧 */}
             <div className="hidden md:flex items-center gap-6 font-nav">
-              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors">
+              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-violet-500 pb-0.5">
                 Mystery Box
               </a>
-              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors">
+              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-transparent pb-0.5 hover:border-white/30">
                 My
               </a>
             </div>
@@ -75,7 +75,7 @@ export default function Home() {
             </span>
           </div>
           <p className="text-center text-white/70 text-sm">
-            © 2026 hashkey 版权所有
+            © 2026 hashkey. All rights reserved.
           </p>
         </div>
       </main>

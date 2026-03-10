@@ -20,7 +20,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-white/70 text-sm">
-              © 2026 hashkey 版权所有
+              © 2026 hashkey. All rights reserved.
             </p>
           </div>
 
@@ -28,7 +28,7 @@ export default function Footer() {
           <div className="lg:col-span-3">
             <h3 className="text-white font-semibold text-sm mb-4 tracking-wide">HashKey</h3>
             <ul className="space-y-3">
-              {["关于我们", "帮助中心", "免责声明", "隐私政策", "使用条款"].map((label) => (
+              {["About Us", "Help Center", "Disclaimer", "Privacy Policy", "Terms of Use"].map((label) => (
                 <li key={label}>
                   <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
                     {label}
@@ -41,16 +41,16 @@ export default function Footer() {
           {/* 右侧：取得联系 */}
           <div className="lg:col-span-4 flex flex-col lg:items-end gap-4">
             <div>
-              <h3 className="text-white font-semibold text-sm mb-4 tracking-wide">取得联系</h3>
+              <h3 className="text-white font-semibold text-sm mb-4 tracking-wide">Get in Touch</h3>
               <ul className="space-y-3">
                 <li>
                   <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
-                    博客
+                    Blog
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
-                    新闻通讯
+                    Newsletter
                   </a>
                 </li>
               </ul>
