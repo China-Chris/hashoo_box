@@ -1,48 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Discovery Hashoo — Mystery Box
+
+A blind box (mystery box) showcase web app. Connect a wallet on **HashKey Chain**, open boxes to reveal rewards, and manage your records and on-chain proofs in **My**.
+
+**Live:** [https://hashoobox.vercel.app/](https://hashoobox.vercel.app/)
+
+---
+
+## Features
+
+- **Mystery Box** — Browse and open blind boxes; desktop has grid + pagination (All / Unopened), mobile has a single card and number picker.
+- **My** — View opening records, claim prizes, and see on-chain proofs (frontend-only demo).
+- **Wallet** — [RainbowKit](https://www.rainbowkit.com/) + [wagmi](https://wagmi.sh/) on **HashKey Chain** only. Open and My require a connected HashKey wallet; otherwise the app prompts to connect.
+- **Responsive** — Layout and navigation adapt for mobile and desktop.
+
+---
+
+## Tech Stack
+
+- [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)
+- [Tailwind CSS 4](https://tailwindcss.com/)
+- [RainbowKit](https://www.rainbowkit.com/) + [wagmi](https://wagmi.sh/) + [viem](https://viem.sh/) for wallet and HashKey Chain
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm / yarn / pnpm
+
+### Install & run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-### Connect Wallet (RainbowKit)
-
-The "Connect Wallet" button uses [RainbowKit](https://www.rainbowkit.com/). To enable WalletConnect (e.g. mobile wallets), set a free project ID from [WalletConnect Cloud](https://cloud.walletconnect.com/):
-
-```bash
+git clone <repo-url>
+cd hashoo_box
+npm install
 cp .env.example .env.local
-# Edit .env.local and set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+npm run dev
 ```
 
-- **Development:** `npm run dev` works with RainbowKit.
-- **Production build:** If `npm run build` fails due to wallet dependencies, try `npm run build:webpack`.
+Open [http://localhost:3000](http://localhost:3000).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Environment variables
 
-## Learn More
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect project ID for mobile / WalletConnect flows. Get one at [WalletConnect Cloud](https://cloud.walletconnect.com/). |
 
-To learn more about Next.js, take a look at the following resources:
+Edit `.env.local` and set the value. If missing, the app still runs but WalletConnect may not work.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Build & deploy
 
-## Deploy on Vercel
+### Local build
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+npm run start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If the default (Turbopack) build fails due to wallet-related dependencies, use the webpack build:
+
+```bash
+npm run build:webpack
+npm run start
+```
+
+### Deploy on Vercel
+
+1. Push the repo to GitHub and import the project in [Vercel](https://vercel.com).
+2. Add `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in **Settings → Environment Variables**.
+3. Use the default **Build Command** (`npm run build`). If the build fails, set **Build Command** to `npm run build:webpack`.
+
+The app is configured for [https://hashoobox.vercel.app/](https://hashoobox.vercel.app/).
+
+---
+
+## Project structure (main)
+
+```
+app/
+  config/wagmi.ts     # HashKey Chain + RainbowKit connectors
+  hooks/              # e.g. useRequireHashKeyWallet
+  components/         # BlindBoxCard, MySection, ConnectWalletButton, etc.
+  page.tsx            # Home (Mystery Box)
+  my/page.tsx         # My (records + proofs)
+  stubs/              # Stubs for some third-party deps (build compatibility)
+```
+
+---
+
+## License
+
+Private / as per repository.
