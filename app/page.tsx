@@ -36,7 +36,7 @@ export default function Home() {
               <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-violet-500 pb-0.5">
                 Mystery Box
               </a>
-              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-transparent pb-0.5 hover:border-white/30">
+              <a href="#my" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-transparent pb-0.5 hover:border-white/30">
                 My
               </a>
             </div>

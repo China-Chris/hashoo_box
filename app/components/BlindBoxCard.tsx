@@ -17,6 +17,7 @@ export default function BlindBoxCard({
   sold = false,
   unopenedCount,
   totalCount = 20,
+  onOpenClick,
 }: {
   title: string;
   id: number;
@@ -29,6 +30,8 @@ export default function BlindBoxCard({
   unopenedCount?: number;
   /** 总盲盒数，与 unopenedCount 配套，后续从同一后端取 */
   totalCount?: number;
+  /** 移动端：点击 Open 时先调此回调（如弹出选号列表），不直接开启 */
+  onOpenClick?: () => void;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [revealedItem, setRevealedItem] = useState<RevealItem | null>(null);
@@ -93,6 +96,17 @@ export default function BlindBoxCard({
                 {revealedItem.amount} HSK
               </p>
             )}
+            {isOpen && (
+              <a
+                href="#my"
+                className="inline-flex items-center gap-1 text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors font-nav mt-1"
+              >
+                View in My
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -114,7 +128,13 @@ export default function BlindBoxCard({
             </span>
           </div>
           <button
-            onClick={handleOpen}
+            onClick={() => {
+              if (onOpenClick && !disabled) {
+                onOpenClick();
+                return;
+              }
+              handleOpen();
+            }}
             disabled={disabled}
             className={`px-4 py-2 rounded-3xl text-sm font-medium transition-all duration-200 font-nav ${
               disabled
