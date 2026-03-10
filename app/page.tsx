@@ -42,7 +42,7 @@ export default function Home() {
             </div>
             <a
               href="#"
-              className="px-3 py-2 rounded-xl text-white hover:text-white hover:bg-white/5 transition-colors text-sm font-medium font-nav"
+              className="px-4 py-2.5 rounded-2xl border border-violet-500/30 bg-violet-600/80 text-white hover:bg-violet-500/90 transition-colors text-sm font-medium font-nav"
               aria-label="Connect Wallet"
             >
               Connect Wallet
