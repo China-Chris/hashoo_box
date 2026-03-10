@@ -1,65 +1,64 @@
-import Image from "next/image";
+import BlindBoxCard from "./components/BlindBoxCard";
+
+const BOXES = [{ id: 0, title: "Hashoo系列" }];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-[#0a0a0f]">
+      {/* 背景光晕 */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-violet-600/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-fuchsia-600/08 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[80px]" />
+      </div>
+
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-10 sm:pt-14 pb-24">
+        {/* 顶部：大标题 + 右上角图标，无左上角品牌 */}
+        <section className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1
+              className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight tracking-tight font-display"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+              Discovery
+              <br />
+              Hashoo
+            </h1>
+          </div>
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white/90 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium font-nav"
+            aria-label="Connect Wallet"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a2.25 2.25 0 012.25-2.25 2.25 2.25 0 012.25 2.25V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3H15a2.25 2.25 0 012.25 2.25 2.25 2.25 0 002.25 2.25h2.25a2.25 2.25 0 002.25-2.25V15" />
+            </svg>
+            Connect Wallet
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
+
+        {/* 盲盒网格 */}
+        <section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {BOXES.map((box) => (
+              <BlindBoxCard
+                key={box.id}
+                id={box.id}
+                title={box.title}
+              />
+            ))}
+          </div>
+        </section>
       </main>
+
+      {/* 底部导航 */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-12 py-4 px-6 bg-[#0a0a0f]/90 border-t border-white/[0.06] backdrop-blur-md font-nav">
+        <a href="#" className="text-white font-medium text-sm">
+          Mystery Box
+        </a>
+        <a href="#" className="text-[#a1a1aa] hover:text-white font-medium text-sm transition-colors">
+          My
+        </a>
+      </nav>
     </div>
   );
 }
