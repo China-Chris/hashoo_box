@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ConnectWalletButton from "../components/ConnectWalletButton";
 import MySection from "../components/MySection";
 import Footer from "../components/Footer";
 
@@ -40,13 +41,7 @@ export default function MyPage() {
                 My
               </Link>
             </div>
-            <a
-              href="#"
-              className="px-4 py-2.5 rounded-2xl border border-violet-500/30 bg-violet-600/80 text-white hover:bg-violet-500/90 transition-colors text-sm font-medium font-nav"
-              aria-label="Connect Wallet"
-            >
-              Connect Wallet
-            </a>
+            <ConnectWalletButton />
           </div>
         </section>
 

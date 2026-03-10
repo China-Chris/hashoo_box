@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "盲盒展示 | Mystery Box",
@@ -22,7 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-black text-[#f0f0f5]">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

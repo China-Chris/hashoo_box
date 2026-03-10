@@ -18,6 +18,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+### Connect Wallet (RainbowKit)
+
+The "Connect Wallet" button uses [RainbowKit](https://www.rainbowkit.com/). To enable WalletConnect (e.g. mobile wallets), set a free project ID from [WalletConnect Cloud](https://cloud.walletconnect.com/):
+
+```bash
+cp .env.example .env.local
+# Edit .env.local and set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+```
+
+- **Development:** `npm run dev` works with RainbowKit.
+- **Production build:** If `npm run build` fails due to wallet dependencies, try `npm run build:webpack`.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

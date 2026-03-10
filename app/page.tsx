@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import BlindBoxPagination from "./components/BlindBoxPagination";
+import ConnectWalletButton from "./components/ConnectWalletButton";
 import Footer from "./components/Footer";
 
 const BOXES = Array.from({ length: 20 }, (_, i) => ({
@@ -41,13 +42,7 @@ export default function Home() {
                 My
               </Link>
             </div>
-            <a
-              href="#"
-              className="px-4 py-2.5 rounded-2xl border border-violet-500/30 bg-violet-600/80 text-white hover:bg-violet-500/90 transition-colors text-sm font-medium font-nav"
-              aria-label="Connect Wallet"
-            >
-              Connect Wallet
-            </a>
+            <ConnectWalletButton />
           </div>
         </section>
 
