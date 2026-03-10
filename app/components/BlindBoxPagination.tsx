@@ -160,7 +160,7 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
         <div className="md:hidden fixed inset-0 z-30 bg-black/90 flex flex-col items-center justify-center p-6 overflow-auto">
           {selectedBoxId === null ? (
             <>
-              <p className="text-white font-medium mb-3">选择开启几号</p>
+              <p className="text-white font-medium mb-3">Choose which number to open</p>
               <div className="flex items-center gap-1 rounded-xl bg-white/5 p-1 mb-4">
                 <button
                   type="button"
@@ -243,12 +243,12 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
                 onClick={() => setMobilePickerOpen(false)}
                 className="text-white/70 text-sm"
               >
-                取消
+                Cancel
               </button>
             </>
           ) : (
             <>
-              <p className="text-white font-medium mb-2">已开启 #{selectedBoxId + 1}</p>
+              <p className="text-white font-medium mb-2">Opened #{selectedBoxId + 1}</p>
               <div className="w-24 h-24 rounded-3xl flex items-center justify-center overflow-hidden shadow-lg bg-transparent mb-2">
                 <Image
                   src="/revealed-token.png"
@@ -260,7 +260,7 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
               </div>
               <p className="text-white font-semibold mb-2">{(selectedBoxId % 10) + 1} HSK</p>
               <a
-                href="#my"
+                href="/my"
                 className="inline-flex items-center gap-1 text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors mb-6"
               >
                 View in My
@@ -276,7 +276,7 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
                 }}
                 className="px-6 py-3 rounded-2xl bg-violet-600 text-white font-medium text-sm"
               >
-                完成
+                Done
               </button>
             </>
           )}

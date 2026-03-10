@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import BlindBoxPagination from "./components/BlindBoxPagination";
 import Footer from "./components/Footer";
 
@@ -33,12 +34,12 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {/* 电脑端：Mystery Box、My 在 Connect Wallet 左侧 */}
             <div className="hidden md:flex items-center gap-6 font-nav">
-              <a href="#" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-violet-500 pb-0.5">
+              <Link href="/" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-violet-500 pb-0.5">
                 Mystery Box
-              </a>
-              <a href="#my" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-transparent pb-0.5 hover:border-white/30">
+              </Link>
+              <Link href="/my" className="text-white font-medium text-sm hover:text-white transition-colors border-b-2 border-transparent pb-0.5 hover:border-white/30">
                 My
-              </a>
+              </Link>
             </div>
             <a
               href="#"
@@ -57,7 +58,7 @@ export default function Home() {
 
         {/* 移动端：盲盒与底栏之间的祝福文案 */}
         <p className="md:hidden text-center text-[#71717a] text-sm font-nav py-8 px-4">
-          愿每一次开启，都遇见惊喜
+          May every open bring you a surprise. 🌸
         </p>
 
         {/* 移动端：祝福下方 logo + HASHKEY + 版权 */}
@@ -85,16 +86,16 @@ export default function Home() {
 
       {/* 底部导航：仅移动端显示，图标 */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 md:hidden flex items-center justify-center gap-20 py-5 px-8 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/95 border-t border-white/[0.06] backdrop-blur-md min-h-[64px]">
-        <a href="#" className="p-4 text-white rounded-2xl active:bg-white/10 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center" aria-label="Mystery Box">
+        <Link href="/" className="p-4 text-white rounded-2xl active:bg-white/10 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center" aria-label="Mystery Box">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
           </svg>
-        </a>
-        <a href="#" className="p-4 text-[#a1a1aa] hover:text-white rounded-2xl active:bg-white/10 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center" aria-label="My">
+        </Link>
+        <Link href="/my" className="p-4 text-[#a1a1aa] hover:text-white rounded-2xl active:bg-white/10 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center" aria-label="My">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
-        </a>
+        </Link>
       </nav>
     </div>
   );

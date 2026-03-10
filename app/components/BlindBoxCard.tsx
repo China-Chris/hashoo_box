@@ -98,7 +98,7 @@ export default function BlindBoxCard({
             )}
             {isOpen && (
               <a
-                href="#my"
+                href="/my"
                 className="inline-flex items-center gap-1 text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors font-nav mt-1"
               >
                 View in My
