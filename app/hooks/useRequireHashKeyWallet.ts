@@ -20,10 +20,7 @@ export function useRequireHashKeyWallet() {
         return;
       }
       if (chainId !== HASHKEY_CHAIN_ID) {
-        switchChain.mutate(
-          { chainId: HASHKEY_CHAIN_ID },
-          { onSuccess: onReady, onError: () => {} }
-        );
+        switchChain.switchChainAsync?.({ chainId: HASHKEY_CHAIN_ID })?.then(onReady).catch(() => {});
         return;
       }
       onReady();
