@@ -3,5 +3,5 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function ConnectWalletButton() {
-  return <ConnectButton />;
+  return <ConnectButton label="Connect Wallet" />;
 }
