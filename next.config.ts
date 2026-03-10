@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  // Turbopack: use relative path so Vercel build can resolve (absolute path can become ./vercel/path0/...)
   turbopack: {
     resolveAlias: {
-      "engine.io-client": path.join(process.cwd(), "app/stubs/engine-io-client.js"),
+      "engine.io-client": "./app/stubs/engine-io-client.js",
     },
   },
   webpack: (config) => {
