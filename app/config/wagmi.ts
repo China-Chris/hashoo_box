@@ -3,6 +3,8 @@
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import {
   injectedWallet,
+  metaMaskWallet,
+  okxWallet,
   rainbowWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
@@ -28,8 +30,14 @@ const hashkeyChain = defineChain({
 const connectors = connectorsForWallets(
   [
     {
-      groupName: "Recommended",
-      wallets: [rainbowWallet, walletConnectWallet, injectedWallet],
+      groupName: "Popular",
+      wallets: [
+        metaMaskWallet,
+        okxWallet,
+        rainbowWallet,
+        walletConnectWallet,
+        injectedWallet,
+      ],
     },
   ],
   { appName: "Discovery Hashoo", projectId }
