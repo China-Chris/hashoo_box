@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { config } from "./config.js";
+import { publicClient } from "./chain.js";
 import { initPersistence } from "./db.js";
 import { openRoutes } from "./routes/open.js";
 
@@ -15,14 +16,30 @@ await app.register(cors, {
   allowedHeaders: ["Content-Type"],
 });
 
-app.get("/health", async () => ({
-  ok: true,
-  chainId: config.chainId,
-  persistence: process.env.DATABASE_URL ? "postgres" : "memory",
-  /** 前端 My 页「链上证明」展示与 Explorer 链接用 */
-  blindBoxAddress: config.blindBoxAddress,
-  vaultAddress: config.vaultAddress ?? null,
-}));
+app.get("/health", async () => {
+  const base = {
+    ok: true,
+    chainId: config.chainId,
+    persistence: process.env.DATABASE_URL ? "postgres" : "memory",
+    blindBoxAddress: config.blindBoxAddress,
+    vaultAddress: config.vaultAddress ?? null,
+    /** 未配盒子上 amount/rewardWei 时的默认发放 wei；0 表示不会用默认值发 */
+    openRewardWei: config.openRewardWei > 0n ? config.openRewardWei.toString() : null,
+  };
+  if (!config.vaultAddress) return { ...base, vaultBalanceWei: null };
+  try {
+    const vaultBalanceWei = await publicClient.getBalance({
+      address: config.vaultAddress,
+    });
+    return {
+      ...base,
+      vaultBalanceWei: vaultBalanceWei.toString(),
+      /** 若 vaultBalanceWei 小于即将发放的 prizeWei，airdrop 会失败，opened_reward_wei 不会写入 */
+    };
+  } catch {
+    return { ...base, vaultBalanceWei: null };
+  }
+});
 
 await app.register(openRoutes);
 

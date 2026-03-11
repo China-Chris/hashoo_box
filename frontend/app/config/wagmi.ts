@@ -1,7 +1,11 @@
 "use client";
 
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
-import { injectedWallet } from "@rainbow-me/rainbowkit/wallets";
+import {
+  injectedWallet,
+  metaMaskWallet,
+  walletConnectWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, http } from "wagmi";
 import { defineChain } from "viem/chains/utils";
 
@@ -44,14 +48,20 @@ const hashkeyMainnet = defineChain({
 });
 
 /**
- * metaMaskWallet 会走 MetaMask SDK，在 localhost:3000 上常卡在
- * "Opening MetaMask... Confirm connection in the extension" 转圈。
- * 只保留 injectedWallet：直接用 window.ethereum（扩展注入），不经过 SDK，小狐狸可正常连。
+ * 移动端优先：MetaMask 组放在最前，连接弹窗先看到小狐狸，再 WalletConnect，再浏览器扩展。
+ * projectId 必填；桌面若 MetaMask 转圈可改用下面 Browser 里的 injected。
  */
 const connectors = connectorsForWallets(
   [
     {
-      groupName: "Browser wallet",
+      groupName: "MetaMask",
+      wallets: [
+        (opts) => metaMaskWallet({ ...opts, projectId }),
+        (opts) => walletConnectWallet({ ...opts, projectId }),
+      ],
+    },
+    {
+      groupName: "Browser",
       wallets: [injectedWallet],
     },
   ],

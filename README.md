@@ -124,8 +124,28 @@ npm install
 npm run dev
 ```
 
-- 健康检查：**http://localhost:3001/health**
+- 健康检查：**http://localhost:3001/health**（会带 `vaultAddress`、`vaultBalanceWei`、`openRewardWei`，见下）
 - 无 Postgres 时也可跑（内存存储，重启丢数据）；有 `DATABASE_URL` 则用 Postgres。
+
+### 2.2b 如何避免「circuit amount; 未写入 opened_reward_wei」
+
+My 里出现 **「N (circuit amount; 未写入 opened_reward_wei 时未发链上奖)」** 表示：开盒链上成功了，但 **Vault 没把 HSK 打给用户**，所以没写入 `opened_reward_wei`。
+
+**开盒前自检（提前知道会不会发奖）：**
+
+1. **`GET /health`**  
+   - **`vaultAddress`** 非空且正确（新部署后别还用旧 Vault）。  
+   - **`vaultBalanceWei`**：Vault 合约地址上的 **native HSK 余额（wei）**。若远小于「每盒要发的 amount×1e18」，airdrop 会失败。  
+   - **`openRewardWei`**：未配单盒 amount 时的默认；为 `null` 且盒子上也没有 amount/rewardWei 时，**prizeWei 为 0，根本不会发**。
+
+2. **登记盒时用 `register-boxes-random-amount.mjs`**  
+   会写入 **amount 1–10**，开盒后按 **amount×1e18** 发；否则只配 **`OPEN_REWARD_WEI`** 做统一默认。
+
+3. **往 `VAULT_ADDRESS` 转够 HSK**  
+   再让用户开盒；已开过的盒不会自动补写，只能事后手动 airdrop 或补发接口。
+
+4. **命令行看 Vault 余额（可选）**  
+   `cast balance <VAULT_ADDRESS> --rpc-url https://testnet.hsk.xyz`
 
 ### 2.3 一键起库 + 种子数据（可选）
 
