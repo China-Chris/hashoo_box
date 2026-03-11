@@ -1,0 +1,11 @@
+{
+  "name": "hashoo-circuits",
+  "private": true,
+  "scripts": {
+    "build": "bash build-real-zk.sh"
+  },
+  "devDependencies": {
+    "circom2": "^0.2.22",
+    "snarkjs": "^0.7.5"
+  }
+}

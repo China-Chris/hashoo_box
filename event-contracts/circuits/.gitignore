@@ -1,0 +1,6 @@
+build/
+node_modules/
+pot12_*.ptau
+pot12_final.ptau
+verifier.sol
+*.bak
