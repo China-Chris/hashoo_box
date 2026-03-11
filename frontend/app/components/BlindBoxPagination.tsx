@@ -5,6 +5,7 @@ import Image from "next/image";
 import BlindBoxCard from "./BlindBoxCard";
 import { fetchBoxList, getApiBase } from "../lib/mysterybox-api";
 import { useOpenBox } from "../hooks/useOpenBox";
+import OpenBoxModal from "./OpenBoxModal";
 
 const PAGE_SIZE = 8; // 每页 8 个，桌面端 4 列 x 2 行
 const TOTAL_BOXES = 20; // 无 API 时的占位总数
@@ -36,7 +37,12 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
   /** 移动端链上开盒成功后的 txHash / 错误 */
   const [pickerTxHash, setPickerTxHash] = useState<string | null>(null);
   const [pickerError, setPickerError] = useState<string | null>(null);
-  const { openBox, isBusy: pickerOpenBusy } = useOpenBox();
+  /** 选号后先弹窗再开盒（与桌面卡片一致，方便特效） */
+  const [openConfirmBoxId, setOpenConfirmBoxId] = useState<string | null>(null);
+  /** 开盒成功后在弹窗内展示结果，点 OK 再关闭 */
+  const [pickerSuccessResult, setPickerSuccessResult] = useState<{ txHash: string; rewardWei?: string } | null>(null);
+  const [openConfirmDisplayId, setOpenConfirmDisplayId] = useState<number>(0);
+  const { openBox, isBusy: pickerOpenBusy, state: pickerOpenState, reset: pickerOpenReset } = useOpenBox();
 
   const loadList = useCallback(async () => {
     if (!getApiBase()) return;
@@ -144,6 +150,10 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
     setPickerPage(1);
     setPickerTxHash(null);
     setPickerError(null);
+    pickerOpenReset();
+    // 有 API 且还有未开盒时，默认进 Unopened，避免第一页全是已开导致「一点进去全不能点」
+    if (usingApi && remainingUnopened > 0) setPickerFilter("unopened");
+    else setPickerFilter("all");
     setMobilePickerOpen(true);
   };
 
@@ -217,7 +227,7 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
         </div>
       </div>
 
-      {/* 移动端：只显示第 1 个，Open 弹出选号列表 */}
+      {/* 移动端：只显示第 1 个，Open 弹出选号列表；isOpen 勿绑 first box 否则 6001 已开则整卡变 Opened */}
       <div className="md:hidden">
         <div className="grid grid-cols-1 gap-6">
           {filteredBoxes.length > 0 && (
@@ -228,9 +238,10 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
               mobileTitle="HashooSeries"
               unopenedCount={remainingUnopened}
               totalCount={totalBoxesCount}
-              isOpen={openedIds.has(filteredBoxes[0].id)}
-              onOpen={() => setOpenedIds((prev) => new Set(prev).add(filteredBoxes[0].id))}
-              onOpenClick={openMobilePicker}
+              isOpen={false}
+              sold={usingApi ? remainingUnopened === 0 : false}
+              onOpen={() => {}}
+              onOpenClick={remainingUnopened > 0 || !usingApi ? openMobilePicker : undefined}
             />
           )}
         </div>
@@ -284,18 +295,11 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
                       key={displayLabel}
                       type="button"
                       disabled={isSold || (usingApi && pickerOpenBusy)}
-                      onClick={async () => {
+                      onClick={() => {
                         if (usingApi && boxIdStr) {
                           setPickerError(null);
-                          const result = await openBox(boxIdStr);
-                          if ("error" in result) {
-                            setPickerError(result.error);
-                            return;
-                          }
-                          setPickerTxHash(result.txHash);
-                          setSelectedBoxId(displayId);
-                          setOpenedIds((prev) => new Set(prev).add(displayId));
-                          await loadList();
+                          setOpenConfirmBoxId(boxIdStr);
+                          setOpenConfirmDisplayId(displayId);
                           return;
                         }
                         setSelectedBoxId(displayId);
@@ -425,6 +429,51 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
           </div>
         )}
       </div>
+
+      {/* 移动端选号后：与桌面一致先弹窗再签名开盒 */}
+      <OpenBoxModal
+        open={Boolean(openConfirmBoxId) || Boolean(pickerSuccessResult)}
+        onClose={() => {
+          if (!pickerOpenBusy && !pickerSuccessResult) {
+            setOpenConfirmBoxId(null);
+            pickerOpenReset();
+          }
+        }}
+        boxLabel={openConfirmBoxId ? `Hashoo #${openConfirmBoxId}` : pickerSuccessResult ? `Hashoo #${openConfirmBoxId ?? ""}` : ""}
+        onConfirm={async () => {
+          if (!openConfirmBoxId) return;
+          setPickerError(null);
+          const result = await openBox(openConfirmBoxId);
+          if ("error" in result) {
+            setPickerError(result.error);
+            return;
+          }
+          setPickerSuccessResult({ txHash: result.txHash, rewardWei: result.rewardWei });
+        }}
+        isBusy={pickerOpenBusy && !pickerSuccessResult}
+        successResult={pickerSuccessResult}
+        onDismissSuccess={async () => {
+          if (pickerSuccessResult) {
+            setPickerTxHash(pickerSuccessResult.txHash);
+            setSelectedBoxId(openConfirmDisplayId);
+            setOpenedIds((prev) => new Set(prev).add(openConfirmDisplayId));
+            await loadList();
+          }
+          setPickerSuccessResult(null);
+          setOpenConfirmBoxId(null);
+          pickerOpenReset();
+        }}
+        statusText={
+          pickerOpenState.status === "signing"
+            ? "Sign in wallet…"
+            : pickerOpenState.status === "submitting"
+              ? "Submitting…"
+              : pickerOpenState.status === "fetching"
+                ? "Loading…"
+                : undefined
+        }
+        errorMessage={pickerOpenState.status === "error" ? pickerOpenState.message : pickerError}
+      />
     </>
   );
 }

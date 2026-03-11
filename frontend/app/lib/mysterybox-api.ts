@@ -107,7 +107,9 @@ export async function postOpen(
   boxId: string,
   signature: `0x${string}`,
   message: OpenTypedDataResponse["message"]
-): Promise<{ txHash: string; boxId: string } | { error: string; detail?: string }> {
+): Promise<
+  { txHash: string; boxId: string; rewardWei?: string } | { error: string; detail?: string }
+> {
   if (!API_BASE) return { error: "API not configured" };
   let r: Response;
   try {
@@ -125,7 +127,7 @@ export async function postOpen(
       error: (j as { error?: string }).error ?? r.statusText,
       detail: (j as { detail?: string }).detail,
     };
-  return j as { txHash: string; boxId: string };
+  return j as { txHash: string; boxId: string; rewardWei?: string };
 }
 
 /** My page: opens recorded for this wallet after POST /open */

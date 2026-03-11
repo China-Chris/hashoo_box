@@ -73,7 +73,7 @@ Base URL：后端地址，例如 `http://localhost:3001`。
 ```
 
 - `txHash`：operator `submitOpen` 交易，可在浏览器打开作为链上证明。
-- 前端 My 页已对接：`fetchMyOpens(address)`（`app/lib/mysterybox-api.ts`）。
+- 前端 My 页已对接：`fetchMyOpens(address)`（`frontend/app/lib/mysterybox-api.ts`）。
 
 **501**：存储未实现 `listOpensByUser`。
 
@@ -194,7 +194,7 @@ const signature = await signTypedData(config, data);
 2. 用户点「开盒」→ `GET .../open-typed-data?user=...` → `signTypedData` → `POST .../open`。
 3. 成功后用 `txHash` 调 explorer 或轮询 `status` 直到 `opened: true`。
 
-**已实现（Next）**：`app/lib/mysterybox-api.ts` 提供 `fetchOpenTypedData` / `postOpen`；`app/hooks/useOpenBox.ts` 串联签名与提交；`BlindBoxCard` 在传入 `chainBoxId` 且配置了 `NEXT_PUBLIC_API_URL` 时走真实开盒；`BlindBoxPagination` 在 API 列表模式下桌面卡片与移动端选号均会调 `openBox(boxId)`。
+**已实现（Next）**：`frontend/app/lib/mysterybox-api.ts` 提供 `fetchOpenTypedData` / `postOpen`；`frontend/app/hooks/useOpenBox.ts` 串联签名与提交；`BlindBoxCard` 在传入 `chainBoxId` 且配置了 `NEXT_PUBLIC_API_URL` 时走真实开盒；`BlindBoxPagination` 在 API 列表模式下桌面卡片与移动端选号均会调 `openBox(boxId)`。
 
 **链 ID 必须一致**：后端 `CHAIN_ID` 与 EIP-712 `domain.chainId` 一致；前端 wagmi 当前链必须相同，否则签名或校验会失败。若后端是 testnet 133，需在 wagmi 里增加对应 chain 并让用户切链。
 

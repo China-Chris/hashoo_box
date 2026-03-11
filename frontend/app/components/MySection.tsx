@@ -18,9 +18,10 @@ const EXPLORER_ADDR = "https://explorer.hsk.xyz/address/";
 function formatHsk(weiStr: string): string {
   try {
     const w = BigInt(weiStr);
-    const whole = w / 10n ** 18n;
-    const frac = w % 10n ** 18n;
-    if (frac === 0n) return whole.toString();
+    const WAD = BigInt(10) ** BigInt(18);
+    const whole = w / WAD;
+    const frac = w % WAD;
+    if (frac === BigInt(0)) return whole.toString();
     const fracStr = frac.toString().padStart(18, "0").replace(/0+$/, "");
     return `${whole}.${fracStr}`;
   } catch {
@@ -116,7 +117,10 @@ export default function MySection() {
         )}
 
         <div className="mb-10">
-          <h3 className="text-lg font-semibold text-white font-nav mb-4">Opening records</h3>
+          <h3 className="text-lg font-semibold text-white font-nav mb-2">Opening records</h3>
+          <p className="text-white/45 text-xs font-nav mb-3">
+            Showing up to 2 rows; scroll for more.
+          </p>
           <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/80 overflow-hidden">
             {loading && items.length === 0 ? (
               <div className="py-12 text-center text-white/50 text-sm font-nav">Loading…</div>
@@ -125,7 +129,12 @@ export default function MySection() {
                 No opening records yet. Open a blind box from Mystery Box first.
               </div>
             ) : (
-              <ul className="divide-y divide-white/[0.06]">
+              <ul
+                className="divide-y divide-white/[0.06] overflow-y-auto overscroll-contain max-h-[280px] [scrollbar-width:thin]"
+                style={{
+                  scrollbarGutter: "stable",
+                }}
+              >
                 {items.map((r) => (
                   <li
                     key={`${r.boxId}-${r.txHash ?? r.openedAt ?? ""}`}
@@ -173,12 +182,13 @@ export default function MySection() {
                       )}
                     </div>
                     {chainByBoxId[r.boxId] && (
-                      <div className="w-full basis-full px-4 pb-3 pt-0 md:px-5">
-                        <div className="rounded-xl border border-violet-500/20 bg-violet-950/20 px-4 py-3 space-y-2">
-                          <p className="text-xs font-medium text-violet-300/90 font-nav">
-                            链上 getOpen(#{r.boxId}) 返回值摘要
-                          </p>
-                          <div className="grid gap-2 text-xs font-mono text-white/85">
+                      <div className="w-full basis-full px-4 pb-2 pt-0 md:px-5">
+                        <details className="group rounded-xl border border-violet-500/20 bg-violet-950/15 open:bg-violet-950/25">
+                          <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-violet-300/90 font-nav flex items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                            <span>On-chain summary (getOpen #{r.boxId})</span>
+                            <span className="text-white/40 group-open:rotate-180 transition-transform">▼</span>
+                          </summary>
+                          <div className="grid gap-2 text-xs font-mono text-white/85 px-3 pb-3 pt-0 border-t border-white/[0.04]">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-white/45 font-nav shrink-0">commitment</span>
                               <code className="break-all rounded bg-black/40 px-2 py-1">
@@ -206,18 +216,18 @@ export default function MySection() {
                               <span className="text-white/45 font-nav">opener </span>
                               {chainByBoxId[r.boxId].user}
                             </div>
+                            {r.txHash && (
+                              <a
+                                href={`${EXPLORER_TX}${r.txHash}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex text-xs font-medium text-violet-400 hover:text-violet-300 font-nav pt-1"
+                              >
+                                View tx Input Data (proof hex)
+                              </a>
+                            )}
                           </div>
-                          {r.txHash && (
-                            <a
-                              href={`${EXPLORER_TX}${r.txHash}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex text-xs font-medium text-violet-400 hover:text-violet-300 font-nav"
-                            >
-                              在浏览器打开此笔 submitOpen 交易 → 查看 Input Data 中 proof 十六进制
-                            </a>
-                          )}
-                        </div>
+                        </details>
                       </div>
                     )}
                   </li>

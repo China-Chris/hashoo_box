@@ -54,7 +54,7 @@
    ```
 
 3. **前端**  
-   当前 wagmi 默认 133；要联 anvil 需在 `app/config/wagmi.ts` 里加 **chain 31337** 并切链，或把后端改为 133 仅当合约在 133 上时。
+   当前 wagmi 默认 133；要联 anvil 需在 `frontend/app/config/wagmi.ts` 里加 **chain 31337** 并切链，或把后端改为 133 仅当合约在 133 上时。
 
 ---
 

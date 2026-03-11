@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRequireHashKeyWallet } from "../hooks/useRequireHashKeyWallet";
 import { useOpenBox } from "../hooks/useOpenBox";
 import { getApiBase } from "../lib/mysterybox-api";
+import OpenBoxModal from "./OpenBoxModal";
 
 type RevealItem = { amount: number };
 
@@ -49,17 +50,28 @@ export default function BlindBoxCard({
   const { openBox, state, reset, isBusy } = useOpenBox();
 
   const useChainOpen = Boolean(chainBoxId && getApiBase());
+  const [openModal, setOpenModal] = useState(false);
+  const [successResult, setSuccessResult] = useState<{ txHash: string; rewardWei?: string } | null>(null);
 
+  const statusText =
+    state.status === "signing"
+      ? "Sign in wallet…"
+      : state.status === "submitting"
+        ? "Submitting…"
+        : state.status === "fetching"
+          ? "Loading…"
+          : undefined;
+
+  // 链上开盒成功由 handleOpen 里 setSuccessResult 驱动弹窗结果页；不在此立刻 reset，避免结果页拿不到 rewardWei
   useEffect(() => {
-    if (state.status === "success") {
+    if (state.status === "success" && !useChainOpen) {
       setRevealedItem(PLACEHOLDER_ITEMS[id % PLACEHOLDER_ITEMS.length]);
       setRemaining((n) => Math.max(0, n - 1));
       onOpenCallback?.();
       if (isOpenProp === undefined) setInternalOpen(true);
-      onChainOpenSuccess?.();
       reset();
     }
-  }, [state.status, id, isOpenProp, onOpenCallback, onChainOpenSuccess, reset]);
+  }, [state.status, id, isOpenProp, onOpenCallback, reset, useChainOpen]);
 
   const handleOpen = async () => {
     if (disabled || isBusy) return;
@@ -67,7 +79,11 @@ export default function BlindBoxCard({
 
     if (useChainOpen && chainBoxId) {
       const result = await openBox(chainBoxId);
-      if ("error" in result) setChainError(result.error);
+      if ("error" in result) {
+        setChainError(result.error);
+        return;
+      }
+      setSuccessResult({ txHash: result.txHash, rewardWei: result.rewardWei });
       return;
     }
 
@@ -76,6 +92,7 @@ export default function BlindBoxCard({
     setRemaining((n) => Math.max(0, n - 1));
     onOpenCallback?.();
     if (isOpenProp === undefined) setInternalOpen(true);
+    setOpenModal(false);
   };
 
   const buttonDisabled = disabled || (useChainOpen && isBusy);
@@ -201,7 +218,8 @@ export default function BlindBoxCard({
                   onOpenClick();
                   return;
                 }
-                void handleOpen();
+                // 无 picker 时先弹窗，再在弹窗内 Confirm 执行开盒（方便以后做特效）
+                setOpenModal(true);
               });
             }}
             disabled={buttonDisabled}
@@ -215,6 +233,29 @@ export default function BlindBoxCard({
           </button>
         </div>
       </div>
+
+      <OpenBoxModal
+        open={openModal || Boolean(successResult)}
+        onClose={() => {
+          if (!isBusy && !successResult) setOpenModal(false);
+        }}
+        boxLabel={chainBoxId ? `Hashoo #${chainBoxId}` : title}
+        onConfirm={handleOpen}
+        isBusy={useChainOpen && isBusy && !successResult}
+        statusText={statusText}
+        errorMessage={state.status === "error" ? state.message : chainError}
+        successResult={successResult}
+        onDismissSuccess={() => {
+          setSuccessResult(null);
+          setOpenModal(false);
+          setRevealedItem(PLACEHOLDER_ITEMS[id % PLACEHOLDER_ITEMS.length]);
+          setRemaining((n) => Math.max(0, n - 1));
+          onOpenCallback?.();
+          if (isOpenProp === undefined) setInternalOpen(true);
+          onChainOpenSuccess?.();
+          reset();
+        }}
+      />
     </div>
   );
 }

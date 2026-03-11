@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     // 必须包含各包自己的 node_modules，否则 ox 内 import 'abitype' 只搜根 node_modules 会失败
     config.resolve.modules = [
       path.join(root, "node_modules"),
+      // @coinbase/cdp-sdk bundles abitype but import 'abitype/zod' must resolve to full exports
+      path.join(root, "node_modules/@coinbase/cdp-sdk/node_modules"),
       path.join(root, "node_modules/ox/node_modules"),
       path.join(root, "node_modules/viem/node_modules"),
       ...(Array.isArray(config.resolve.modules) ? config.resolve.modules : ["node_modules"]),
@@ -70,7 +72,24 @@ const nextConfig: NextConfig = {
       root,
       "node_modules/abitype/dist/esm/exports/zod.js"
     );
-    // abitype 已 reinstall 完整后通常只需 alias；若仍解析失败可恢复 ReplacementPlugin
+    // cdp-sdk 内 import 'abitype/zod' 在部分解析顺序下 alias 不生效，用 Replacement 强制指向根 abitype
+    const abitypeZodPath = path.join(root, "node_modules/abitype/dist/esm/exports/zod.js");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const webpack = require("webpack");
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(/^abitype\/zod$/, abitypeZodPath)
+    );
+    // MetaMask SDK 可选依赖，浏览器构建不需要 react-native async-storage
+    config.resolve.alias["@react-native-async-storage/async-storage"] = path.join(
+      root,
+      "app/stubs/async-storage.js"
+    );
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /@metamask\/sdk/ },
+      /Can't resolve '@react-native-async-storage\/async-storage'/,
+    ];
     return config;
   },
 };

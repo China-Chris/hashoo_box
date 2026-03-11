@@ -1,94 +1,133 @@
-# Discovery Hashoo — Mystery Box
+# Hashoo Box — Mystery Blind Box (Full Stack)
 
-A blind box (mystery box) showcase web app. Connect a wallet on **HashKey Chain**, open boxes to reveal rewards, and manage your records and on-chain proofs in **My**.
+Blind box dApp on **HashKey Chain**: browse boxes, **open on-chain** with EIP-712 + ZK proof, optional **Vault airdrop (HSK)**, and **My** page for records + on-chain proof summaries.
 
-**Live:** [https://hashoobox.vercel.app/](https://hashoobox.vercel.app/)
+**Live:** [hashoobox.vercel.app](https://hashoobox.vercel.app/)
 
----
-
-## Features
-
-- **Mystery Box** — Browse and open blind boxes; desktop has grid + pagination (All / Unopened), mobile has a single card and number picker.
-- **My** — View opening records, claim prizes, and see on-chain proofs (frontend-only demo).
-- **Wallet** — [RainbowKit](https://www.rainbowkit.com/) + [wagmi](https://wagmi.sh/) on **HashKey Chain** only. Open and My require a connected HashKey wallet; otherwise the app prompts to connect.
-- **Responsive** — Layout and navigation adapt for mobile and desktop.
+**Repo layout:** `frontend/` (Next.js) · `backend/` (Fastify API) · `event-contracts/` (Foundry + ZK)
 
 ---
 
-## Tech Stack
+## What you get
 
-- [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)
-- [Tailwind CSS 4](https://tailwindcss.com/)
-- [RainbowKit](https://www.rainbowkit.com/) + [wagmi](https://wagmi.sh/) + [viem](https://viem.sh/) for wallet and HashKey Chain
+| Area | Description |
+|------|-------------|
+| **Mystery Box** | Grid + pagination (All / Unopened); mobile picker. With `NEXT_PUBLIC_API_URL` set, list comes from backend; open flow uses **Confirm open** modal → wallet sign → submit. |
+| **Open success** | Same modal shows **Hashoo #&lt;id&gt;**, **`revealed-token.png`** coin, **+N HSK** when Vault paid, and **View in My** → `/my`. |
+| **My** | Opens per wallet, HSK amounts, tx links, collapsible on-chain proof (chain `getOpen` via backend). |
+| **Wallet** | RainbowKit + wagmi, HashKey testnet/mainnet in `frontend/app/config/wagmi.ts`. |
+
+Without `NEXT_PUBLIC_API_URL`, the frontend falls back to local demo boxes (no real chain open).
 
 ---
 
-## Getting Started
+## Architecture
 
-### Prerequisites
+```
+┌─────────────┐     GET /boxes, GET open-typed-data, POST /open      ┌──────────────┐
+│  Next.js    │ ───────────────────────────────────────────────────► │ Fastify API  │
+│  (frontend/)│     CORS from browser (localhost:3000 → :3001)        │  backend/    │
+└─────────────┘                                                       └──────┬───────┘
+       │                                                                     │
+       │ signTypedData + POST open                                          │ viem
+       ▼                                                                     ▼
+┌─────────────┐                                                       ┌──────────────┐
+│   Wallet    │                                                       │ BlindBoxZK   │
+│  HashKey    │                                                       │ + Vault      │
+└─────────────┘                                                       └──────────────┘
+```
 
-- Node.js 18+
-- npm / yarn / pnpm
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind 4, wagmi/viem, RainbowKit — all under **`frontend/`**.
+- **Backend:** Fastify, viem, snarkjs prover, Postgres — **`backend/`**.
+- **Contracts:** **`event-contracts/`** — BlindBoxZK + Vault; ZK verifier must match real circuit (`commit_open_final.zkey`).
 
-### Install & run
+---
+
+## Repo layout
+
+| Path | Purpose |
+|------|--------|
+| **`frontend/`** | Next app: `app/page.tsx`, `app/my/page.tsx`, components, `public/revealed-token.png`, `package.json` |
+| **`backend/`** | API server, DB, EIP-712, chain calls, prover |
+| **`backend/docker-compose.yml`** | Postgres on host port **5433** |
+| **`backend/scripts/postgres-up-and-seed.sh`** | Compose up + migrate + seed boxes |
+| **`event-contracts/`** | Solidity + Foundry; submodule `lib/forge-std` |
+| **`scripts/start-all.sh`** | Postgres + backend + frontend dev (uses `frontend/` for Next) |
+
+---
+
+## Prerequisites
+
+- **Node.js 18+** and **pnpm** / npm
+- **Docker** (Postgres)
+- **Foundry** (optional, for `event-contracts/`)
+
+---
+
+## Frontend (Next.js) — `frontend/`
 
 ```bash
-git clone <repo-url>
-cd hashoo_box
+cd hashoo_box/frontend
 npm install
 cp .env.example .env.local
+# Edit .env.local — WalletConnect ID; NEXT_PUBLIC_API_URL=http://localhost:3001 for real open
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Environment variables
+### Frontend env (`frontend/.env.local`)
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect project ID for mobile / WalletConnect flows. Get one at [WalletConnect Cloud](https://cloud.walletconnect.com/). |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Recommended | [WalletConnect Cloud](https://cloud.walletconnect.com/) |
+| `NEXT_PUBLIC_API_URL` | For chain open | Backend base URL, e.g. `http://localhost:3001` |
 
-Edit `.env.local` and set the value. If missing, the app still runs but WalletConnect may not work.
-
----
-
-## Build & deploy
-
-### Local build
+### Build
 
 ```bash
+cd frontend
 npm run build
 npm run start
 ```
 
-If the default (Turbopack) build fails due to wallet-related dependencies, use the webpack build:
+### Vercel
 
-```bash
-npm run build:webpack
-npm run start
-```
-
-### Deploy on Vercel
-
-1. Push the repo to GitHub and import the project in [Vercel](https://vercel.com).
-2. Add `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in **Settings → Environment Variables**.
-3. Use the default **Build Command** (`npm run build`). If the build fails, set **Build Command** to `npm run build:webpack`.
-
-The app is configured for [https://hashoobox.vercel.app/](https://hashoobox.vercel.app/).
+- **Root Directory:** `frontend`
+- **Build command:** `npm run build` (or `pnpm run build`)
+- Set the same env vars in Vercel project settings
 
 ---
 
-## Project structure (main)
+## Backend — `backend/`
 
+Same as before: `GET /health`, `GET /boxes`, `POST /boxes/:id/open`, `GET /me/opens`, etc. See `backend/docs/FRONTEND_API.md`.
+
+```bash
+cd backend
+cp .env.example .env   # if present; else create with OPERATOR_PRIVATE_KEY, BLIND_BOX_ADDRESS, …
+docker compose up -d postgres   # port 5433
+npm install && npm run dev
 ```
-app/
-  config/wagmi.ts     # HashKey Chain + RainbowKit connectors
-  hooks/              # e.g. useRequireHashKeyWallet
-  components/         # BlindBoxCard, MySection, ConnectWalletButton, etc.
-  page.tsx            # Home (Mystery Box)
-  my/page.tsx         # My (records + proofs)
-  stubs/              # Stubs for some third-party deps (build compatibility)
+
+Point **`frontend`** `NEXT_PUBLIC_API_URL=http://localhost:3001`.
+
+---
+
+## One-shot dev (all three)
+
+```bash
+bash scripts/start-all.sh
 ```
+
+Starts Postgres (5433), backend (3001), then Next from **`frontend/`** (3000).
+
+---
+
+## Contracts & ZK
+
+- Deploy under `event-contracts/`; use **real ZK** deploy so verifier matches `commit_open_final.zkey`.
+- Fund **Vault** for HSK airdrops when using `OPEN_REWARD_WEI` or per-box rewards.
 
 ---
 

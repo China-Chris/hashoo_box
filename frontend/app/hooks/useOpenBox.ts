@@ -9,7 +9,7 @@ export type OpenBoxState =
   | { status: "fetching" }
   | { status: "signing" }
   | { status: "submitting" }
-  | { status: "success"; txHash: string }
+  | { status: "success"; txHash: string; rewardWei?: string }
   | { status: "error"; message: string };
 
 /**
@@ -22,7 +22,9 @@ export function useOpenBox() {
   const [state, setState] = useState<OpenBoxState>({ status: "idle" });
 
   const openBox = useCallback(
-    async (boxId: string): Promise<{ txHash: string } | { error: string }> => {
+    async (
+      boxId: string
+    ): Promise<{ txHash: string; rewardWei?: string } | { error: string }> => {
       if (!getApiBase()) return { error: "NEXT_PUBLIC_API_URL not set" };
       if (!address) return { error: "Wallet not connected" };
 
@@ -56,8 +58,12 @@ export function useOpenBox() {
         return { error: msg };
       }
 
-      setState({ status: "success", txHash: result.txHash });
-      return { txHash: result.txHash };
+      const rewardWei =
+        typeof result.rewardWei === "string" && result.rewardWei.length > 0
+          ? result.rewardWei
+          : undefined;
+      setState({ status: "success", txHash: result.txHash, rewardWei });
+      return { txHash: result.txHash, rewardWei };
     },
     [address, signTypedDataAsync]
   );
