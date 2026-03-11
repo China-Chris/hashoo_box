@@ -4,7 +4,7 @@
  */
 import "dotenv/config";
 import { privateKeyToAccount } from "viem/accounts";
-import { boxStore } from "../src/db.js";
+import { getBoxStore } from "../src/db.js";
 import {
   eip712Domain,
   eip712Types,
@@ -31,10 +31,11 @@ async function main() {
   const commitment = (salt + amount) % r;
   const saltHex = ("0x" + salt.toString(16).padStart(64, "0")) as `0x${string}`;
 
-  if (boxStore.get(boxId)) {
+  const store = getBoxStore();
+  if (await store.get(boxId)) {
     console.log("Box exists");
   } else {
-    boxStore.register({
+    await store.register({
       boxId,
       commitment,
       saltHex,
@@ -44,7 +45,7 @@ async function main() {
     console.log("Registered box", boxId.toString(), "commitment", commitment.toString());
   }
 
-  const nonce = boxStore.getNonce(ANVIL_USER.address);
+  const nonce = await store.getNonce(ANVIL_USER.address);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
   const message: OpenIntentMessage = {
     boxId,
@@ -66,7 +67,7 @@ async function main() {
   });
   await verifyOpenSignature(message, signature);
 
-  const box = boxStore.get(boxId)!;
+  const box = (await store.get(boxId))!;
   const proofBytes = await proveOpen(box);
   console.log("Proof bytes length", (proofBytes.length - 2) / 2);
 

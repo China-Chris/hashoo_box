@@ -1,7 +1,3 @@
-/**
- * Minimal ABI for BlindBoxZK — submitOpen + isOpened.
- * Full artifact can be swapped from forge build out/ if needed.
- */
 export const blindBoxZKAbi = [
   {
     type: "function",
@@ -20,6 +16,35 @@ export const blindBoxZKAbi = [
     name: "isOpened",
     inputs: [{ name: "boxId", type: "uint256" }],
     outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "registerBox",
+    inputs: [
+      { name: "boxId", type: "uint256" },
+      { name: "commitment", type: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "getOpen",
+    inputs: [{ name: "boxId", type: "uint256" }],
+    outputs: [
+      { name: "proof", type: "bytes" },
+      { name: "commitment", type: "uint256" },
+      { name: "timestamp", type: "uint256" },
+      { name: "user", type: "address" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getRegisteredCommitment",
+    inputs: [{ name: "boxId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
 ] as const;

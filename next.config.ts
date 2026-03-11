@@ -1,18 +1,25 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const root = process.cwd();
+
 const nextConfig: NextConfig = {
-  // Turbopack: use relative path so Vercel build can resolve (absolute path can become ./vercel/path0/...)
+  // 多 lockfile 时把 Turbopack 根固定在本仓库，避免从上级目录解析 node_modules 失败
   turbopack: {
+    root,
     resolveAlias: {
       "engine.io-client": "./app/stubs/engine-io-client.js",
+      // viem 内联 import 'abitype'，Turbopack 需显式别名到本仓库 node_modules
+      abitype: "./node_modules/abitype/dist/esm/exports/index.js",
     },
   },
   webpack: (config) => {
-    const root = process.cwd();
     config.resolve.alias = config.resolve.alias || {};
+    // 必须包含各包自己的 node_modules，否则 ox 内 import 'abitype' 只搜根 node_modules 会失败
     config.resolve.modules = [
       path.join(root, "node_modules"),
+      path.join(root, "node_modules/ox/node_modules"),
+      path.join(root, "node_modules/viem/node_modules"),
       ...(Array.isArray(config.resolve.modules) ? config.resolve.modules : ["node_modules"]),
     ];
     // Stub missing createBaseAccountSDK.js in @base-org/account (Base/Coinbase SDK)
@@ -52,11 +59,18 @@ const nextConfig: NextConfig = {
       root,
       "app/stubs/engine-io-client.js"
     );
-    // Ensure abitype resolves (required by ox/viem ENS); use ox's nested copy
-    config.resolve.alias["abitype"] = path.join(
+    // Ensure abitype resolves（alias 在部分 Next 链路里对 ox 内 import 不生效，用 Replacement 强制指向）
+    const abitypeEsm = path.join(root, "node_modules/abitype/dist/esm/exports/index.js");
+    config.resolve.alias["abitype"] = abitypeEsm;
+    config.resolve.alias["abitype/abis"] = path.join(
       root,
-      "node_modules/ox/node_modules/abitype/dist/esm/exports/index.js"
+      "node_modules/abitype/dist/esm/exports/abis.js"
     );
+    config.resolve.alias["abitype/zod"] = path.join(
+      root,
+      "node_modules/abitype/dist/esm/exports/zod.js"
+    );
+    // abitype 已 reinstall 完整后通常只需 alias；若仍解析失败可恢复 ReplacementPlugin
     return config;
   },
 };

@@ -1,35 +1,99 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Image from "next/image";
 import BlindBoxCard from "./BlindBoxCard";
+import { fetchBoxList, getApiBase } from "../lib/mysterybox-api";
+import { useOpenBox } from "../hooks/useOpenBox";
 
 const PAGE_SIZE = 8; // 每页 8 个，桌面端 4 列 x 2 行
-const TOTAL_BOXES = 20; // 总盲盒数，后续从后端接口取
-const SOLD_BOX_IDS = new Set([0, 2, 4, 7]); // Hashoo#1, #3, #5, #8 已售
+const TOTAL_BOXES = 20; // 无 API 时的占位总数
+const SOLD_BOX_IDS = new Set([0, 2, 4, 7]); // 无 API 时演示用已售
 
 type Box = { id: number; title: string; remaining: number };
+
+/** 后端 boxId 可能是大整数字符串；卡片用 number 时用 hash 映射仅作演示，优先用 title 显示真实 boxId */
+function boxIdToDisplayId(boxId: string): number {
+  const n = Number(boxId);
+  if (Number.isSafeInteger(n) && n >= 0 && n < 1e9) return n;
+  let h = 0;
+  for (let i = 0; i < boxId.length; i++) h = (h * 31 + boxId.charCodeAt(i)) >>> 0;
+  return h % 1e6;
+}
 
 export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
   const [page, setPage] = useState(1);
   const [openedIds, setOpenedIds] = useState<Set<number>>(new Set());
+  /** 来自 GET /boxes 的列表（含 opened），有 API 时优先 */
+  const [apiList, setApiList] = useState<
+    { boxId: string; opened: boolean; displayId: number }[] | null
+  >(null);
   const [filter, setFilter] = useState<"all" | "unopened">("all");
   const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
   const [selectedBoxId, setSelectedBoxId] = useState<number | null>(null);
   const [pickerFilter, setPickerFilter] = useState<"all" | "unopened">("all");
   const [pickerPage, setPickerPage] = useState(1);
+  /** 移动端链上开盒成功后的 txHash / 错误 */
+  const [pickerTxHash, setPickerTxHash] = useState<string | null>(null);
+  const [pickerError, setPickerError] = useState<string | null>(null);
+  const { openBox, isBusy: pickerOpenBusy } = useOpenBox();
 
-  // 未开启数量 = 总数 - 已售 - 已开启（与后端接口一致，目前用常量 20）
-  const remainingUnopened = TOTAL_BOXES - SOLD_BOX_IDS.size - openedIds.size;
+  const loadList = useCallback(async () => {
+    if (!getApiBase()) return;
+    const all = await fetchBoxList({ limit: 500, offset: 0 });
+    if (!all?.items?.length) {
+      setApiList(null);
+      return;
+    }
+    const mapped = all.items.map((item) => ({
+      boxId: item.boxId,
+      opened: item.opened,
+      displayId: boxIdToDisplayId(item.boxId),
+    }));
+    setApiList(mapped);
+    setOpenedIds((prev) => {
+      const next = new Set(prev);
+      for (const it of mapped) if (it.opened) next.add(it.displayId);
+      return next;
+    });
+  }, []);
 
-  // Unopened：只排除已售，不排除本次已开启（开启后仍留在列表直到刷新）
-  const filteredBoxes = useMemo(
-    () =>
-      filter === "unopened"
-        ? boxes.filter((b) => !SOLD_BOX_IDS.has(b.id))
-        : boxes,
-    [boxes, filter]
-  );
+  useEffect(() => {
+    loadList();
+  }, [loadList]);
+
+  const usingApi = apiList != null && apiList.length > 0;
+
+  // 有 API：列表来自 DB，筛选 opened=false = 未开
+  const boxesFromApi: Box[] | null = useMemo(() => {
+    if (!apiList) return null;
+    return apiList.map((it) => ({
+      id: it.displayId,
+      title: `Hashoo#${it.boxId}`,
+      remaining: 0,
+      _boxId: it.boxId,
+      _opened: it.opened,
+    })) as Box[];
+  }, [apiList]);
+
+  const effectiveBoxes = boxesFromApi ?? boxes;
+  const totalBoxesCount = usingApi ? apiList!.length : TOTAL_BOXES;
+
+  // 未开启数量
+  const remainingUnopened = usingApi
+    ? apiList!.filter((i) => !i.opened).length
+    : TOTAL_BOXES - SOLD_BOX_IDS.size - openedIds.size;
+
+  // Unopened：API 模式只显示未开；本地模式排除已售
+  const filteredBoxes = useMemo(() => {
+    if (usingApi && boxesFromApi) {
+      if (filter === "unopened") return boxesFromApi.filter((b) => !(b as Box & { _opened?: boolean })._opened);
+      return boxesFromApi;
+    }
+    return filter === "unopened"
+      ? effectiveBoxes.filter((b) => !SOLD_BOX_IDS.has(b.id))
+      : effectiveBoxes;
+  }, [usingApi, boxesFromApi, filter, effectiveBoxes]);
   const totalPages = Math.max(1, Math.ceil(filteredBoxes.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * PAGE_SIZE;
@@ -48,14 +112,18 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
-  // 移动端选号弹层：筛选与分页
-  const pickerNumbers = useMemo(
-    () =>
-      pickerFilter === "unopened"
-        ? Array.from({ length: TOTAL_BOXES }, (_, i) => i + 1).filter((num) => !SOLD_BOX_IDS.has(num - 1))
-        : Array.from({ length: TOTAL_BOXES }, (_, i) => i + 1),
-    [pickerFilter]
-  );
+  // 移动端选号弹层：API 模式用 apiList 的 boxId；本地模式 1..TOTAL
+  const pickerNumbers = useMemo(() => {
+    if (usingApi && apiList) {
+      const nums = apiList
+        .filter((it) => (pickerFilter === "unopened" ? !it.opened : true))
+        .map((it) => it.boxId);
+      return nums;
+    }
+    return pickerFilter === "unopened"
+      ? Array.from({ length: TOTAL_BOXES }, (_, i) => i + 1).filter((num) => !SOLD_BOX_IDS.has(num - 1))
+      : Array.from({ length: TOTAL_BOXES }, (_, i) => i + 1);
+  }, [usingApi, apiList, pickerFilter]);
   const pickerTotalPages = Math.max(1, Math.ceil(pickerNumbers.length / PAGE_SIZE));
   const pickerSafePage = Math.min(pickerPage, pickerTotalPages);
   const pickerPageNumbers = pickerNumbers.slice(
@@ -63,8 +131,19 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
     pickerSafePage * PAGE_SIZE
   );
 
+  const isPickerEntrySold = (entry: string | number) => {
+    if (usingApi && apiList) {
+      const it = apiList.find((x) => x.boxId === String(entry));
+      return it?.opened ?? false;
+    }
+    const id = typeof entry === "number" ? entry - 1 : Number(entry) - 1;
+    return SOLD_BOX_IDS.has(id);
+  };
+
   const openMobilePicker = () => {
     setPickerPage(1);
+    setPickerTxHash(null);
+    setPickerError(null);
     setMobilePickerOpen(true);
   };
 
@@ -141,17 +220,19 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
       {/* 移动端：只显示第 1 个，Open 弹出选号列表 */}
       <div className="md:hidden">
         <div className="grid grid-cols-1 gap-6">
-          <BlindBoxCard
-            id={boxes[0].id}
-            title={boxes[0].title}
-            remaining={boxes[0].remaining}
-            mobileTitle="HashooSeries"
-            unopenedCount={remainingUnopened}
-            totalCount={TOTAL_BOXES}
-            isOpen={openedIds.has(boxes[0].id)}
-            onOpen={() => setOpenedIds((prev) => new Set(prev).add(boxes[0].id))}
-            onOpenClick={openMobilePicker}
-          />
+          {filteredBoxes.length > 0 && (
+            <BlindBoxCard
+              id={filteredBoxes[0].id}
+              title={filteredBoxes[0].title}
+              remaining={filteredBoxes[0].remaining}
+              mobileTitle="HashooSeries"
+              unopenedCount={remainingUnopened}
+              totalCount={totalBoxesCount}
+              isOpen={openedIds.has(filteredBoxes[0].id)}
+              onOpen={() => setOpenedIds((prev) => new Set(prev).add(filteredBoxes[0].id))}
+              onOpenClick={openMobilePicker}
+            />
+          )}
         </div>
       </div>
 
@@ -187,26 +268,46 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
                   Unopened
                 </button>
               </div>
+              {pickerError && (
+                <p className="text-red-400 text-sm mb-2 text-center max-w-xs">{pickerError}</p>
+              )}
               <div className="grid grid-cols-4 gap-3 w-full max-w-xs mb-4">
                 {pickerPageNumbers.map((num) => {
-                  const id = num - 1;
-                  const isSold = SOLD_BOX_IDS.has(id);
+                  const isSold = isPickerEntrySold(num);
+                  const displayLabel = String(num);
+                  const displayId = usingApi && apiList
+                    ? apiList.find((x) => x.boxId === String(num))?.displayId ?? 0
+                    : Number(num) - 1;
+                  const boxIdStr = usingApi ? String(num) : null;
                   return (
                     <button
-                      key={num}
+                      key={displayLabel}
                       type="button"
-                      disabled={isSold}
-                      onClick={() => {
-                        setSelectedBoxId(id);
-                        setOpenedIds((prev) => new Set(prev).add(id));
+                      disabled={isSold || (usingApi && pickerOpenBusy)}
+                      onClick={async () => {
+                        if (usingApi && boxIdStr) {
+                          setPickerError(null);
+                          const result = await openBox(boxIdStr);
+                          if ("error" in result) {
+                            setPickerError(result.error);
+                            return;
+                          }
+                          setPickerTxHash(result.txHash);
+                          setSelectedBoxId(displayId);
+                          setOpenedIds((prev) => new Set(prev).add(displayId));
+                          await loadList();
+                          return;
+                        }
+                        setSelectedBoxId(displayId);
+                        setOpenedIds((prev) => new Set(prev).add(displayId));
                       }}
                       className={`h-12 rounded-xl text-sm font-medium transition-colors ${
-                        isSold
+                        isSold || (usingApi && pickerOpenBusy)
                           ? "bg-white/10 text-white/40 cursor-not-allowed"
                           : "bg-violet-600/80 text-white active:bg-violet-500"
                       }`}
                     >
-                      #{num}
+                      #{displayLabel}
                     </button>
                   );
                 })}
@@ -248,7 +349,21 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
             </>
           ) : (
             <>
-              <p className="text-white font-medium mb-2">Opened #{selectedBoxId + 1}</p>
+              <p className="text-white font-medium mb-2">
+                Opened {usingApi && apiList?.find((x) => x.displayId === selectedBoxId)
+                  ? `#${apiList.find((x) => x.displayId === selectedBoxId)!.boxId}`
+                  : `#${selectedBoxId != null ? selectedBoxId + 1 : ""}`}
+              </p>
+              {pickerTxHash && (
+                <a
+                  href={`https://explorer.hsk.xyz/tx/${pickerTxHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-violet-400 text-xs mb-2 break-all max-w-xs text-center"
+                >
+                  Tx: {pickerTxHash.slice(0, 10)}…
+                </a>
+              )}
               <div className="w-24 h-24 rounded-3xl flex items-center justify-center overflow-hidden shadow-lg bg-transparent mb-2">
                 <Image
                   src="/revealed-token.png"
@@ -289,17 +404,24 @@ export default function BlindBoxPagination({ boxes }: { boxes: Box[] }) {
           <p className="text-center text-white/50 text-sm py-12">暂无未开启的盲盒</p>
         ) : (
           <div className="grid grid-cols-4 grid-rows-2 gap-6">
-            {pageBoxes.map((box) => (
-              <BlindBoxCard
-                key={box.id}
-                id={box.id}
-                title={box.title}
-                remaining={box.remaining}
-                isOpen={openedIds.has(box.id)}
-                onOpen={() => setOpenedIds((prev) => new Set(prev).add(box.id))}
-                sold={SOLD_BOX_IDS.has(box.id)}
-              />
-            ))}
+            {pageBoxes.map((box) => {
+              const openedFromApi = (box as Box & { _opened?: boolean })._opened === true;
+              const sold = usingApi ? openedFromApi : SOLD_BOX_IDS.has(box.id);
+              const chainBoxId = (box as Box & { _boxId?: string })._boxId;
+              return (
+                <BlindBoxCard
+                  key={chainBoxId ?? box.id}
+                  id={box.id}
+                  title={box.title}
+                  remaining={box.remaining}
+                  isOpen={openedIds.has(box.id) || openedFromApi}
+                  onOpen={() => setOpenedIds((prev) => new Set(prev).add(box.id))}
+                  sold={sold}
+                  chainBoxId={usingApi ? chainBoxId : undefined}
+                  onChainOpenSuccess={loadList}
+                />
+              );
+            })}
           </div>
         )}
       </div>

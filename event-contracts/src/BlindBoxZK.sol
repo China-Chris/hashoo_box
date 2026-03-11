@@ -23,6 +23,11 @@ contract BlindBoxZK {
     /// boxId => open record (timestamp != 0 means opened)
     mapping(uint256 => OpenProof) internal _opens;
 
+    /// 3C: boxId => commitment registered on-chain (0 = not registered). Operator registers at mint/listing.
+    mapping(uint256 => uint256) internal _registeredCommitment;
+
+    event BoxRegistered(uint256 indexed boxId, uint256 commitment, uint256 timestamp);
+
     event OpenSubmitted(
         address indexed operator,
         uint256 indexed boxId,
@@ -38,6 +43,8 @@ contract BlindBoxZK {
     error NotOpened();
     error ZeroAddress();
     error AccessDenied();
+    error AlreadyRegistered();
+    error CommitmentMismatch();
 
     modifier onlyRole(bytes32 role) {
         if (!_roles[msg.sender][role]) revert AccessDenied();
@@ -66,13 +73,27 @@ contract BlindBoxZK {
         return _roles[account][role];
     }
 
-    /// @notice Operator submits open for boxId; proof must verify with publicInputs[0] == commitment.
+    /// @notice 3C: register commitment on-chain before open (indexer/backend can sync).
+    function registerBox(uint256 boxId, uint256 commitment) external onlyRole(OPERATOR_ROLE) {
+        if (_opens[boxId].timestamp != 0) revert AlreadyOpened();
+        if (_registeredCommitment[boxId] != 0) revert AlreadyRegistered();
+        _registeredCommitment[boxId] = commitment;
+        emit BoxRegistered(boxId, commitment, block.timestamp);
+    }
+
+    function getRegisteredCommitment(uint256 boxId) external view returns (uint256) {
+        return _registeredCommitment[boxId];
+    }
+
+    /// @notice Operator submits open; if registerBox was called, commitment must match.
     /// @param user Opener address (for event; backend binds EIP-712 off-chain).
     function submitOpen(uint256 boxId, address user, bytes calldata proof, uint256 commitment)
         external
         onlyRole(OPERATOR_ROLE)
     {
         if (_opens[boxId].timestamp != 0) revert AlreadyOpened();
+        uint256 reg = _registeredCommitment[boxId];
+        if (reg != 0 && reg != commitment) revert CommitmentMismatch();
 
         uint256[] memory publicInputs = new uint256[](1);
         publicInputs[0] = commitment;

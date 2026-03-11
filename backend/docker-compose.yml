@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: blindbox
+      POSTGRES_PASSWORD: blindbox
+      POSTGRES_DB: blindbox
+    # 本机若已有 Postgres 占 5432，改用 5433 映射，避免连错库
+    ports:
+      - "5433:5432"
+    volumes:
+      - blindbox_pg:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  blindbox_pg:

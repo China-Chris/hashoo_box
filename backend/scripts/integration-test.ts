@@ -6,7 +6,7 @@ import "dotenv/config";
 import { privateKeyToAccount } from "viem/accounts";
 import { createPublicClient, http, parseEther } from "viem";
 import { config } from "../src/config.js";
-import { boxStore } from "../src/db.js";
+import { getBoxStore } from "../src/db.js";
 import {
   eip712Domain,
   eip712Types,
@@ -32,11 +32,11 @@ async function main() {
   const saltHex =
     "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`;
 
-  // Reset memory store if re-run in same process
-  if (boxStore.get(boxId)) {
+  const store = getBoxStore();
+  if (await store.get(boxId)) {
     console.log("Box already in store; using existing");
   } else {
-    boxStore.register({
+    await store.register({
       boxId,
       commitment,
       saltHex,
@@ -45,7 +45,7 @@ async function main() {
     console.log("Registered box", boxId.toString());
   }
 
-  const nonce = boxStore.getNonce(ANVIL_USER.address);
+  const nonce = await store.getNonce(ANVIL_USER.address);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
   const message: OpenIntentMessage = {
     boxId,
@@ -69,7 +69,7 @@ async function main() {
   await verifyOpenSignature(message, signature);
   console.log("EIP-712 signature ok");
 
-  const box = boxStore.get(boxId)!;
+  const box = (await store.get(boxId))!;
   const proofBytes = await proveOpen(box);
   console.log("Prover returned", proofBytes === "0x" ? "0x (mock)" : "bytes");
 
@@ -85,8 +85,8 @@ async function main() {
   if (!opened) throw new Error("isOpened still false after submitOpen");
   console.log("isOpened(boxId) = true — flow ok");
 
-  boxStore.markOpened(boxId);
-  boxStore.bumpNonce(ANVIL_USER.address);
+  await store.markOpened(boxId);
+  await store.bumpNonce(ANVIL_USER.address);
 
   // Optional: Vault airdrop smoke (fund vault first)
   if (config.vaultAddress) {

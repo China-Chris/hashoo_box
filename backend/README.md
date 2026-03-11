@@ -2,6 +2,16 @@
 
 Node + TypeScript + Fastify + viem. Operator submits `submitOpen` after EIP-712 verify + proving.
 
+## Postgres（持久化）
+
+```bash
+docker compose up -d postgres
+# .env
+DATABASE_URL=postgresql://blindbox:blindbox@localhost:5432/blindbox
+```
+
+未设置 `DATABASE_URL` 时使用内存存储（重启丢数据）。
+
 ## Setup
 
 ```bash
