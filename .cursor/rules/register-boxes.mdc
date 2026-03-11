@@ -1,0 +1,12 @@
+---
+description: Blind box registration — always use Node script register-boxes-random-amount.mjs
+globs: backend/scripts/**,backend/docs/**
+---
+
+# 盲盒登记约定
+
+- **登记一批盲盒（DB + 可选链上）时，统一用：**
+  `backend/scripts/register-boxes-random-amount.mjs`（Node）
+- **接项目优先：** 新部署 BlindBoxZK → `backend/.env` 的 `BLIND_BOX_ADDRESS` 改为新地址 → **`BASE_BOX_ID=1`** + `REGISTER_ON_CHAIN=1` 登记（从 1 号盒开始）。
+- 沿用旧合约时不能用 1 号段若已占用；换未占用号段 + `REGISTER_ON_CHAIN=1`。
+- **不要用** `register-new-boxids-on-chain.sh` 做正式业务——commitment=salt（amount=0）联调路径，与随机 1–10 HSK 不一致。

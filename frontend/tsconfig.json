@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    // 不限制时 TS 会隐式加载 node_modules/@types 下所有包，易触发缺失 @types/connect 等报错
+    "types": ["node"],
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,

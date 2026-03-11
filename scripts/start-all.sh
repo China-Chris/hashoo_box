@@ -48,6 +48,13 @@ else
   echo "Backend OK http://localhost:3001/health"
 fi
 
+# 可选：backend/.env 里 REGISTER_BATCH=1 时自动跑登记（变量同 backend/.env.example）
+REGISTER_BATCH=$(grep -E '^REGISTER_BATCH=' "$ROOT/backend/.env" 2>/dev/null | cut -d= -f2 | tr -d '\r' || true)
+if [[ "${REGISTER_BATCH:-0}" == "1" ]]; then
+  echo "=== 2b. REGISTER_BATCH=1 — register boxes from backend/.env ==="
+  bash "$ROOT/scripts/register-boxes-from-env.sh" || echo "Register step failed — fix .env BASE/COUNT/ON_CHAIN or see README §2.5"
+fi
+
 echo "=== 3. Next (port 3000) — frontend/ ==="
 cd "$ROOT/frontend"
 if [[ ! -d node_modules ]]; then
